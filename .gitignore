@@ -1,0 +1,6 @@
+/.idea
+/venv
+/pdf
+*.png
+*.txt
+!./main.py
