@@ -1,6 +1,6 @@
 import pdfplumber
 
-FILE_NAME = 'One_CV.pdf' #External_abdula.pdf - 2oi
+FILE_NAME = 'External.pdf' #External_abdula.pdf - 2oi
 FILE_PATH = f"pdf/{FILE_NAME}"
 
 
@@ -87,8 +87,6 @@ def find_text_in_document(pdf):
             old_value.update(education_component)
         else:
             educations.append(education_component)
-    works_fields = ['Job Title', 'Start Date', 'End Date', 'Years of work experience']
-    # work_experience_blocks = detect_work_experience_blocks(pdf)
     return {'person_name': person_name, 'person_last_name': person_last_name, 'gender': gender, 'education': educations,
             'geo': geo}
 
@@ -189,12 +187,12 @@ def detect_work_experience_blocks(pdf):
                 text = work_block.extract_text().replace('\n', ' ')
                 if text == block_start_text:
                     count_start += 1
-                    work_block.to_image().save('work_start_block.png', format='png')
+                    # work_block.to_image().save('work_start_block.png', format='png')
                     work_block_start = {'x0': x0, 'y0': top + 20, 'x1': x1, 'y1': bottom,
                                              'page_number': page.page_number}
                 elif text == block_end_text:
                     count_end += 1
-                    work_block.to_image().save('work_end_block.png', format='png')
+                    # work_block.to_image().save('work_end_block.png', format='png')
 
                     work_block_end = {'x0': x0, 'y0': top, 'x1': x1, 'y1': bottom - 20,
                                            'page_number': page.page_number, 'isLast': True}
@@ -223,8 +221,8 @@ def detect_work_experience_blocks(pdf):
                 coordinates.append({'start': {'coordinates': text.get('coordinates'),
                                               'page': work_count.get('page')}})
                 coor = text.get('coordinates')
-                pdf.pages[work_count.get('page')].crop((coor.get('x0'), coor.get('top'), coor.get('x1'), coor.get('bottom')))\
-                    .to_image().save(f'START_BLOCK_{work_count.get("page")}_NUMBER_work_exp_count.png', format="PNG")
+                # pdf.pages[work_count.get('page')].crop((coor.get('x0'), coor.get('top'), coor.get('x1'), coor.get('bottom')))\
+                #     .to_image().save(f'START_BLOCK_{work_count.get("page")}_NUMBER_work_exp_count.png', format="PNG")
     end_top = work_block_end.get('y0')
     end_x0 = work_block_end.get('x0')
     end_x1 = work_block_end.get('x1')
@@ -285,14 +283,32 @@ def detect_work_experience_blocks(pdf):
 
 
 def main():
-    with pdfplumber.open(FILE_PATH) as pdf:
-        # name = find_name(pdf)
-        # gender = find_gender(pdf)
-        # find_education(pdf)
-        # res = find_text_in_document(pdf)
-        # res = detect_work_experience_blocks(pdf)
-        # print(res)
-        wr = detect_work_experience_blocks(pdf)
-        print(wr)
-
+    # with pdfplumber.open(FILE_PATH) as pdf:
+    #     # name = find_name(pdf)
+    #     # gender = find_gender(pdf)
+    #     # find_education(pdf)
+    #     res = find_text_in_document(pdf)
+    #     res = detect_work_experience_blocks(pdf)
+    #     # print(res)
+    #     wr = detect_work_experience_blocks(pdf)
+    #     res = { 'work_experience': wr, **res}
+    #     print(wr)
+    from detect import DetectText
+    import datetime
+    delta = datetime.datetime.now()
+    r = DetectText(FILE_PATH).find_blocks_coordinates([{'start_block_text': 'Education, Qualification and Training',
+                                                        'end_block_text': 'Work Experience',
+                                                        'block_name': 'Education'},
+                                                       ])
+    print(r)
+    r = DetectText(FILE_PATH).find_blocks_coordinates([{'start_block_text': 'Work Experience',
+                                                        'end_block_text': 'Cover Letter',
+                                                        'block_name': 'Work'},
+                                                       ])
+    print(r)
+    r = DetectText(FILE_PATH).find_blocks_coordinates([{'start_block_text': 'Candidate Personal Information',
+                                                        'end_block_text': 'Candidate Personal Information',
+                                                        'block_name': 'Person Infromation'},
+                                                       ])
+    print((delta - datetime.datetime.now()).seconds)
 main()
