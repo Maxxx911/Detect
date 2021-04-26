@@ -1,6 +1,6 @@
 import pdfplumber
 
-FILE_NAME = 'External.pdf' #External_abdula.pdf - 2oi
+FILE_NAME = 'One_CV.pdf' #External_abdula.pdf - 2oi
 FILE_PATH = f"pdf/{FILE_NAME}"
 
 
@@ -296,19 +296,26 @@ def main():
     from detect import DetectText
     import datetime
     delta = datetime.datetime.now()
-    r = DetectText(FILE_PATH).find_blocks_coordinates([{'start_block_text': 'Education, Qualification and Training',
+    d = DetectText(FILE_PATH)
+    r = d.find_blocks_coordinates([{'start_block_text': 'Education, Qualification and Training',
                                                         'end_block_text': 'Work Experience',
                                                         'block_name': 'Education'},
                                                        ])
-    print(r)
-    r = DetectText(FILE_PATH).find_blocks_coordinates([{'start_block_text': 'Work Experience',
-                                                        'end_block_text': 'Cover Letter',
-                                                        'block_name': 'Work'},
-                                                       ])
-    print(r)
-    r = DetectText(FILE_PATH).find_blocks_coordinates([{'start_block_text': 'Candidate Personal Information',
-                                                        'end_block_text': 'Candidate Personal Information',
-                                                        'block_name': 'Person Infromation'},
-                                                       ])
+    ed_blocks = None
+    education_fields = ['Education/Qualification/Training', 'Start Date', 'Field of study', 'Education (degree)',
+                        'Training completed', 'Relevant training completed']
+    for i in r:
+        ed_blocks = d.detect_education_blocks(i.get('Education').get('block_start'), i.get('Education').get('block_end'))
+    a = d.extract_education(ed_blocks, education_fields)
+    # print(r)
+    # r = DetectText(FILE_PATH).find_blocks_coordinates([{'start_block_text': 'Work Experience',
+    #                                                     'end_block_text': 'Cover Letter',
+    #                                                     'block_name': 'Work'},
+    #                                                    ])
+    # print(r)
+    # r = DetectText(FILE_PATH).find_blocks_coordinates([{'start_block_text': 'Candidate Personal Information',
+    #                                                     'end_block_text': 'Candidate Personal Information',
+    #                                                     'block_name': 'Person Infromation'},
+    #                                                    ])
     print((delta - datetime.datetime.now()).seconds)
 main()
