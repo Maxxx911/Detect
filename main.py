@@ -297,16 +297,24 @@ def main():
     import datetime
     delta = datetime.datetime.now()
     d = DetectText(FILE_PATH)
-    r = d.find_blocks_coordinates([{'start_block_text': 'Education, Qualification and Training',
-                                                        'end_block_text': 'Work Experience',
-                                                        'block_name': 'Education'},
+    # {'start_block_text': 'Education, Qualification and Training',
+    #                                                         'end_block_text': 'Work Experience',
+    #                                                         'block_name': 'Education'}
+    # {'start_block_text': 'Work Experience',
+    #                                                          'end_block_text': 'Cover Letter',
+    #                                                          'block_name': 'Work'}
+    r = d.find_blocks_coordinates([{'start_block_text': 'Candidate Personal Information',
+                                                         'end_block_text': 'Basic Profile',
+                                                         'block_name': 'Person Infromation'}
                                                        ])
     ed_blocks = None
-    education_fields = ['Education/Qualification/Training', 'Start Date', 'Field of study', 'Education (degree)',
-                        'Training completed', 'Relevant training completed']
+    # education_fields = ['Education/Qualification/Training', 'Start Date', 'Field of study', 'Education (degree)',
+    #                     'Training completed', 'Relevant training completed']
+    work_fields = ['Job Title', 'Years of work experience']
     for i in r:
-        ed_blocks = d.detect_education_blocks(i.get('Education').get('block_start'), i.get('Education').get('block_end'))
-    a = d.extract_education(ed_blocks, education_fields)
+        ed_blocks = d.detect_person_information_blocks(i.get('Person Infromation').get('block_start'), i.get('Person Infromation').get('block_end'))
+    a = d.extract_data(ed_blocks, ['Gender', 'WHO geographical distribution'])
+    # d.extract_data(c, ['Gender', 'WHO geographical distribution'])
     # print(r)
     # r = DetectText(FILE_PATH).find_blocks_coordinates([{'start_block_text': 'Work Experience',
     #                                                     'end_block_text': 'Cover Letter',

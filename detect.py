@@ -86,18 +86,55 @@ class DetectText:
                                                       'y1': line.get('bottom')},
                                       'page': ed_page}})
 
+    def detect_work_blocks(self, work_block_start, work_block_end):
+        work_pages = [*range(work_block_start.get('page_number') - 1, work_block_end.get('page_number'))]
+        work_exp_count = 1  # Счетчик номера Опыта работы
+        coordinates = []
+        for w_page in work_pages:
+            # Находим на странице Work Experience 1, 2 и т.д
+            text = self.detect_text(self.pdf.pages[w_page], f'Work Experience {work_exp_count}')
+            if text is not None:
+                if len(coordinates) > 0:
+                    coordinates[-1].update({'end': {'coordinates': text.get('coordinates'), 'page': w_page}})
+                work_exp_count += 1
+                coordinates.append({'start': {'coordinates': text.get('coordinates'), 'page': w_page}})
+        end_y0 = work_block_end.get('y0')
+        end_x1 = work_block_end.get('x1')
+        end_y1 = work_block_end.get('y1') + 1
+        coordinates[-1].update({'end': {'coordinates': {"x0": 0, 'x1': end_x1, 'top': end_y0, 'bottom': end_y1},
+                                        'page': work_block_end.get('page_number') - 1}})
+        return coordinates
 
-    # TODO заменить получение линий, с помощью текста(С линия какая-то беда(не нашло одну из линий)
-    # После замены проверить работу с на WE, все должно работать
+    def detect_person_information_blocks(self, person_information_block_start, person_information_block_end):
+        start_y0 = person_information_block_start.get('y0')
+        start_x1 = person_information_block_start.get('x1')
+        start_y1 = person_information_block_start.get('y1')
+        start_page = person_information_block_start.get('page_number') - 1
+        end_y0 = person_information_block_end.get('y0')
+        end_x1 = person_information_block_end.get('x1')
+        end_y1 = person_information_block_end.get('y1')
+        end_page = person_information_block_end.get('page_number') - 1
+        coordinates = {'start': {'coordinates': {'x0': 0, 'y0': start_y0, 'x1': start_x1, 'y1': start_y1},
+                                 'page': start_page},
+                       'end': {'coordinates': {'x0': 0, 'y0': end_y0, 'x1': end_x1, 'y1': end_y1},
+                               'page': end_page}}
+        return [coordinates]
+
     def detect_education_blocks(self, education_block_start, education_block_end):
         education_pages = [*range(education_block_start.get('page_number') - 1, education_block_end.get('page_number'))]
-        coordinates = []
+        start_x0 = education_block_start.get('x0')
+        start_y0 = education_block_start.get('y0')
+        start_x1 = education_block_start.get('x1')
+        start_y1 = education_block_start.get('y1')
+        start_page = education_block_start.get('page_number') - 1
+        coordinates = [{'start': {'coordinates': {'x0': 0, 'y0': start_y0, 'x1': start_x1, 'y1': start_y1},
+                                  'page': start_page}}]
         education_block_line_start_y0 = education_block_start.get('y0')
-        education_block_line_start_x0 = education_block_start.get('x0') + 10
+        education_block_line_start_x0 = start_x0 + 10
         education_block_line_end_y0 = education_block_end.get('y0')
         for ed_page in education_pages:
             page = self.pdf.pages[ed_page]
-            is_start = ed_page == (education_block_start.get('page_number')) - 1
+            is_start = ed_page == start_page
             is_end = ed_page == (education_block_end.get('page_number')) - 1
             for line in page.lines:
                 # Если линия не имеет большего отступа от начала блока
@@ -165,10 +202,10 @@ class DetectText:
                                                                  empty_fields.get('coordinates'))
                         extracted_fields[empty_fields.get('field_to_extract')] = word
                     else:
-                        word = self.detect_text(field, self.pdf.pages[coord.get('page')].crop((coord.get('x0'),
-                                                                                               coord.get('y0'),
-                                                                                               coord.get('x1'),
-                                                                                               coord.get('y1'))))
+                        word = self.detect_text(self.pdf.pages[coord.get('page')].crop((coord.get('x0'),
+                                                                                        coord.get('y0'),
+                                                                                        coord.get('x1'),
+                                                                                        coord.get('y1'))), field)
                     if word is not None:
                         if word.get('text') == '':
                             empty_fields = {'field_to_extract': field,
@@ -179,6 +216,6 @@ class DetectText:
             results.append(extracted_fields)
         return results
 
-    def extract_education(self, blocks, fields):
+    def extract_data(self, blocks, fields):
         cropped_area = self.detect_crop_area(blocks)
         return self.detect_fields(cropped_area, fields)
