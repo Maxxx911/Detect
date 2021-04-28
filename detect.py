@@ -2,11 +2,13 @@ import pdfplumber
 
 
 class DetectText:
+    # Константы для начала и конца блоков
     education_block_start_text = 'Education, Qualification and Training'
     education_block_end_text = 'Work Experience'
     work_experience_start_text = education_block_end_text
     work_experience_end_text = 'Cover Letter'
-    person_information_text = 'Candidate Personal Information'
+    person_information_start_text = 'Candidate Personal Information'
+    person_information_end_text = 'Basic Profile'
 
     def __init__(self, file_path):
         self.pdf = pdfplumber.open(file_path)
@@ -26,13 +28,14 @@ class DetectText:
             bucket_storage[block.get('block_name')] = {'block_start': {}, 'block_end': {}}
         return bucket_storage
 
+    # Метод для нахождения всех включений блоков в документе
     def find_blocks_coordinates(self, blocks_to_find):
         cvs_blocks_coordinates = []
-        bucket_storage = self.get_empty_bucket(blocks_to_find)
+        bucket_storage = self.get_empty_bucket(blocks_to_find)  # Структура для временного хранения значений начала и конца
         for page in self.pdf.pages:
-            if self.check_is_full_bucket(bucket_storage):
-                cvs_blocks_coordinates.append(bucket_storage)
-                bucket_storage = self.get_empty_bucket(blocks_to_find)
+            if self.check_is_full_bucket(bucket_storage):  # Если есть начало и конец блока
+                cvs_blocks_coordinates.append(bucket_storage)  # Сохраняем в результирующий массив
+                bucket_storage = self.get_empty_bucket(blocks_to_find)  # Очищаем "Ведро"
             for block_to_find in blocks_to_find:
                 block_name = block_to_find.get('block_name')
                 for line in page.lines:
@@ -65,6 +68,8 @@ class DetectText:
                                                                          'y0': word.get('top'),
                                                                          'y1': word.get('bottom')}}
 
+    # Метод для нахождения текста по координатам, используется если поле нашлось на одной странице,
+    # а значение этого поля на другой
     @staticmethod
     def detect_text_with_coordinates(block, coordinates):
         words = block.extract_words(use_text_flow=True, keep_blank_chars=True)
@@ -88,7 +93,7 @@ class DetectText:
 
     def detect_work_blocks(self, work_block_start, work_block_end):
         work_pages = [*range(work_block_start.get('page_number') - 1, work_block_end.get('page_number'))]
-        work_exp_count = 1  # Счетчик номера Опыта работы
+        work_exp_count = 1  # Счетчик номера 'Work Experience'
         coordinates = []
         for w_page in work_pages:
             # Находим на странице Work Experience 1, 2 и т.д
@@ -164,10 +169,10 @@ class DetectText:
                      'page': education_block_end.get('page_number') - 1}})
         return coordinates
 
+    # Метод для определения область для поиска текста
     def detect_crop_area(self, blocks):
         cropped_blocks = []
-        header_height = self.pdf.pages[0].hyperlinks[0].get(
-            'bottom') + 10  # Координата в bottom спецификации заглавия страницы
+        header_height = self.pdf.pages[0].hyperlinks[0].get('bottom') + 10  # Координата заглавия страницы
         for block in blocks:
             block_coordinates = []
             block_page_start = block.get('start').get('page')
@@ -195,7 +200,7 @@ class DetectText:
         for crop_bloc in cropped_blocks:
             extracted_fields = {}
             for field in fields:
-                empty_fields = None
+                empty_fields = None # Переменная для не найденных значений на текущей странице
                 for coord in crop_bloc.get('coordinates'):
                     if empty_fields is not None:
                         word = self.detect_text_with_coordinates(self.pdf.pages[coord.get('page')],
